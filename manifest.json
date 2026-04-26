@@ -1,0 +1,23 @@
+{
+  "short_name": "LOTO",
+  "name": "LOTO C. GASNIER",
+  "id": "/LOTO C. GASNIER/index.html",
+  "description": "Tirage des boules du loto",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#F5F3EE",
+  "display": "standalone",
+  "scope": "./",
+  "theme_color": "#2A4B8D"
+}

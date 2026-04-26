@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOTO C. GASNIER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Roboto:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --panel-bg: #0f172a;
+            --accent-neon: #00f2ff;
+            --gold-last: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+            --red-old: #e74c3c;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-dark);
+            margin: 0; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; color: white;
+        }
+
+        .main-layout {
+            display: flex; gap: 20px; background: var(--panel-bg); padding: 20px;
+            border-radius: 30px; box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 2px var(--accent-neon);
+            width: 98vw; height: 94vh; box-sizing: border-box;
+        }
+
+        /* Panneau de gauche fixe */
+        .drawing-section {
+            flex: 0 0 320px; display: flex; flex-direction: column;
+            align-items: center; justify-content: space-around;
+            border-right: 1px solid rgba(255,255,255,0.1); padding-right: 15px;
+        }
+
+        .universe {
+            width: 220px; height: 220px;
+            display: flex; justify-content: center; align-items: center;
+            perspective: 1000px;
+        }
+
+        .planet {
+            width: 200px; height: 200px;
+            border-radius: 50%; position: relative;
+            background: #1e293b; overflow: hidden;
+            box-shadow: inset -15px -15px 40px #000, inset 15px 15px 40px rgba(255,255,255,0.1);
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        .number-belt {
+            display: flex; flex-direction: column; align-items: center;
+            position: absolute; top: 40px; will-change: transform;
+        }
+
+        .belt-digit {
+            height: 120px; display: flex; align-items: center; justify-content: center;
+            font-family: 'Orbitron', sans-serif; font-size: 80px; font-weight: 900;
+            color: var(--accent-neon); text-shadow: 0 0 20px rgba(0, 242, 255, 0.8);
+        }
+
+        .gloss {
+            position: absolute; width: 100%; height: 100%; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.15) 0%, transparent 60%);
+            pointer-events: none; z-index: 5;
+        }
+
+        /* Historique mini */
+        .history-mini { display: flex; gap: 5px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 50px; min-height: 35px; }
+        .history-ball {
+            width: 35px; height: 35px; background: #334155; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; font-size: 0.8rem; border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .config-box { background: rgba(255,255,255,0.05); padding: 8px; border-radius: 12px; text-align: center; width: 90%; }
+        input[type="number"] {
+            background: #020617; color: var(--accent-neon); border: 1px solid var(--accent-neon);
+            padding: 5px; border-radius: 8px; font-family: 'Orbitron'; font-size: 1rem;
+            width: 60px; text-align: center; outline: none;
+        }
+
+        /* Section Grille à droite */
+        .grid-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(10, 1fr); 
+            gap: 5px; 
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .cell { 
+            background: rgba(255,255,255,0.03); border-radius: 8px; 
+            display: flex; justify-content: center; align-items: center; 
+            font-weight: 900; color: #1e293b; border: 1px solid rgba(255,255,255,0.02);
+        }
+        .cell.last-drawn { background: var(--gold-last); color: #000; transform: scale(1.05); box-shadow: 0 0 15px orange; z-index: 5;}
+        .cell.already-drawn { background: var(--red-old); color: white; }
+        
+        button { 
+            width: 100%; padding: 15px; font-family: 'Orbitron'; font-weight: bold; 
+            border-radius: 12px; border: none; cursor: pointer; 
+            background: var(--accent-neon); color: var(--bg-dark); 
+        }
+        button:disabled { opacity: 0.5; }
+    </style>
+</head>
+<body>
+
+<audio id="wheel-sound" src="roue.mp3"></audio>
+
+<div class="main-layout">
+    <div class="drawing-section">
+        <h1 style="font-family:'Orbitron'; font-size: 1.4rem; margin:0;">LOTO AQUARELIA</h1>
+        
+        <div class="universe">
+            <div class="planet">
+                <div class="number-belt" id="belt">
+                    <div class="belt-digit">--</div>
+                </div>
+                <div class="gloss"></div>
+            </div>
+        </div>
+
+        <div style="text-align: center;">
+            <div style="font-family:'Orbitron'; font-size: 0.6rem; color: #64748b;">PRÉCÉDENTS</div>
+            <div class="history-mini" id="history-mini"></div>
+        </div>
+
+        <div class="config-box">
+            <label style="font-size: 0.6rem; color: #64748b; display: block;">BOULIER</label>
+            <input type="number" id="max-input" value="90" min="1" max="200" onchange="init()">
+        </div>
+        
+        <label style="font-size: 0.8rem; color: #64748b; cursor:pointer">
+            <input type="checkbox" id="voice-check" checked> Voix 🔊
+        </label>
+
+        <button id="draw-btn" onclick="startDraw()">Tirer une boule</button>
+        
+        <div style="text-align: center;">
+            <div style="font-family:'Orbitron'; color:var(--accent-neon); font-size: 0.7rem;">
+                SORTIS : <span id="draw-count">0</span> / <span id="total-display">90</span>
+            </div>
+            <div onclick="reset()" style="color:#475569; font-size:0.7rem; cursor:pointer; text-decoration: underline; margin-top:5px;">Nouvelle Partie</div>
+        </div>
+    </div>
+
+    <div class="grid-section">
+        <div style="display:flex; justify-content: flex-end; margin-bottom: 5px;">
+            <div style="font-family:'Orbitron'; color:#64748b; font-size: 0.8rem;">DISPONIBLES : <span id="remaining-count" style="color:white">90</span></div>
+        </div>
+        <div class="grid" id="bingo-grid"></div>
+    </div>
+</div>
+
+<script>
+    let numbers = [];
+    let history = [];
+    let maxNumbers = 90;
+    const belt = document.getElementById('belt');
+    const wheelSound = document.getElementById('wheel-sound');
+    const digitHeight = 120; 
+
+    function init() {
+        let val = parseInt(document.getElementById('max-input').value);
+        if (isNaN(val) || val < 1) val = 90;
+        maxNumbers = val;
+        numbers = Array.from({length: maxNumbers}, (_, i) => i + 1);
+        history = [];
+        
+        const grid = document.getElementById('bingo-grid');
+        grid.innerHTML = '';
+        
+        // Taille de police dynamique pour que tout rentre
+        let fontSize = "1.8rem";
+        if (maxNumbers > 60) fontSize = "1.4rem";
+        if (maxNumbers > 100) fontSize = "1rem";
+
+        for (let i = 1; i <= maxNumbers; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.id = 'cell-' + i;
+            cell.textContent = i;
+            cell.style.fontSize = fontSize;
+            grid.appendChild(cell);
+        }
+        updateUI();
+    }
+
+    function startDraw() {
+        if (numbers.length === 0) return;
+        document.getElementById('draw-btn').disabled = true;
+        document.getElementById('max-input').disabled = true;
+
+        wheelSound.currentTime = 0;
+        wheelSound.play().catch(e => {});
+
+        const sequenceLength = 20; 
+        let sequenceHTML = "";
+        for(let i=0; i<sequenceLength; i++) {
+            sequenceHTML += `<div class="belt-digit">${Math.floor(Math.random()*maxNumbers)+1}</div>`;
+        }
+        const index = Math.floor(Math.random() * numbers.length);
+        const picked = numbers.splice(index, 1)[0];
+        sequenceHTML += `<div class="belt-digit">${picked}</div>`;
+        
+        belt.innerHTML = sequenceHTML;
+        belt.style.transition = "none";
+        belt.style.transform = "translateY(0)";
+
+        setTimeout(() => {
+            belt.style.transition = `transform 3s cubic-bezier(0.15, 0, 0.15, 1)`;
+            belt.style.transform = `translateY(-${sequenceLength * digitHeight}px)`;
+            setTimeout(() => {
+                wheelSound.pause();
+                finalize(picked);
+            }, 3100);
+        }, 50);
+    }
+
+    function finalize(picked) {
+        belt.style.transition = "none";
+        belt.style.transform = "translateY(0)";
+        belt.innerHTML = `<div class="belt-digit">${picked}</div>`;
+
+        if (history.length > 0) {
+            const old = document.getElementById('cell-' + history[0]);
+            if(old) { old.classList.remove('last-drawn'); old.classList.add('already-drawn'); }
+        }
+        
+        history.unshift(picked);
+        const currentCell = document.getElementById('cell-' + picked);
+        if(currentCell) currentCell.classList.add('last-drawn');
+        
+        announce(picked);
+        updateUI();
+
+        if (numbers.length > 0) {
+            document.getElementById('draw-btn').disabled = false;
+        }
+    }
+
+    function announce(num) {
+        if (!document.getElementById('voice-check').checked) return;
+        window.speechSynthesis.cancel();
+        const msg = new SpeechSynthesisUtterance("Le numéro " + num);
+        msg.lang = 'fr-FR';
+        msg.rate = 0.85;
+        window.speechSynthesis.speak(msg);
+    }
+
+    function updateUI() {
+        document.getElementById('remaining-count').textContent = numbers.length;
+        document.getElementById('draw-count').textContent = history.length;
+        document.getElementById('total-display').textContent = maxNumbers;
+        
+        const historyContainer = document.getElementById('history-mini');
+        historyContainer.innerHTML = '';
+        history.slice(1, 6).forEach(num => {
+            const ball = document.createElement('div');
+            ball.className = 'history-ball';
+            ball.textContent = num;
+            historyContainer.appendChild(ball);
+        });
+    }
+
+    function reset() {
+        if (!confirm("Voulez-vous réinitialiser le boulier ?")) return;
+        document.getElementById('max-input').disabled = false;
+        document.getElementById('draw-btn').disabled = false;
+        belt.innerHTML = `<div class="belt-digit">--</div>`;
+        init();
+    }
+
+    init();
+</script>
+</body>
+</html>
